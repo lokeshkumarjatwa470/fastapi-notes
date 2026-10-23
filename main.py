@@ -1,12 +1,12 @@
 from fastapi import FastAPI , Path, HTTPException , status 
 from typing import Annotated 
-from pydantic import BaseModel , Field  
+from pydantic import BaseModel , Field, HttpUrl  
 
 app = FastAPI()
 next_id = 1
 
 class image(BaseModel):
-    url : str = Field(title="The URL of the image")
+    url : HttpUrl = Field(title="The URL of the image")
     name : str = Field(title="The name of the image")
 
 class NoteCreate(BaseModel):
