@@ -1,18 +1,20 @@
-from fastapi import FastAPI , Path, HTTPException , status
+from fastapi import FastAPI , Path, HTTPException , status 
 from typing import Annotated 
-from pydantic import BaseModel 
+from pydantic import BaseModel , Field  
 
 app = FastAPI()
 next_id = 1
 
 class NoteCreate(BaseModel):
-    title : str 
-    content : str 
-
+    title : str = Field(title="The title of the note" , max_length=100 , min_length=1)
+    content : str = Field(title="The content of the note" , max_length=1000 , min_length=1)
+ 
 class Note(BaseModel):
-    id : int 
-    title : str 
-    content : str 
+    id : int = Field(title="The ID of the note" , ge=1)
+    title : str = Field(title="The title of the note" , max_length=100 , min_length=1)
+    content : str = Field(title="The content of the note" , max_length=1000 , min_length=1)
+
+
 
 notes_db = {}
 
@@ -44,3 +46,11 @@ async def delete_note(note_id : Annotated[int , Path(title="The ID of the note t
         del notes_db[note_id]
     else:
         raise HTTPException(status_code=404 , detail="Note not found")
+
+@app.put("/notes/{note_id}")
+async def update_note(note_id : Annotated[int , Path(title="The ID of the note to update")] , note : NoteCreate):
+    existing_note = notes_db.get(note_id)
+    if existing_note is None:
+        raise HTTPException(status_code=404 , detail="Note not found")
+    notes_db[note_id] = {"title" : note.title , "content" : note.content}
+    return Note(id=note_id , title=note.title , content=note.content)

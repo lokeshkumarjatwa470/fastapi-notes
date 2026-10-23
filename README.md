@@ -13,3 +13,4 @@ uv run uvicorn main:app --reload
 - GET /notes: list all notes (200)
 - GET /notes/{note_id}: get one note (200, or 404)
 - DELETE /notes/{note_id}: delete a note (204, or 404)
+- PUT /notes/{note_id}: update a note(200 , 404 , 422)
