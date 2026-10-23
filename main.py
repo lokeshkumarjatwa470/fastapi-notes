@@ -6,13 +6,13 @@ app = FastAPI()
 next_id = 1
 
 class NoteCreate(BaseModel):
-    title : str = Field(title="The title of the note" , max_length=100 , min_length=1)
-    content : str = Field(title="The content of the note" , max_length=1000 , min_length=1)
+    title : str = Field( max_length=100 , min_length=1)
+    content : str = Field(max_length=1000 , min_length=1)
  
 class Note(BaseModel):
-    id : int = Field(title="The ID of the note" , ge=1)
-    title : str = Field(title="The title of the note" , max_length=100 , min_length=1)
-    content : str = Field(title="The content of the note" , max_length=1000 , min_length=1)
+    id : int = Field(ge=1)
+    title : str = Field(max_length=100 , min_length=1)
+    content : str = Field( max_length=1000 , min_length=1)
 
 
 
