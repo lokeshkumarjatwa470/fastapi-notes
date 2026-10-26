@@ -15,10 +15,10 @@ class NoteCreate(BaseModel):
     images : list[image] | None = Field(default = None , title="The list of images associated with the note")
 
 class Note(BaseModel):
-    id : int 
-    title : str 
-    content : str 
-    images : list[image] | None = None
+    id : int = Field(title="The ID of the note")
+    title : str = Field(title="The title of the note")
+    content : str = Field(title="The content of the note")
+    images : list[image] | None = Field(default=None, title="The list of images associated with the note")
 
 notes_db = {}
 
