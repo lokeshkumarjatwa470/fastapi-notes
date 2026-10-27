@@ -14,11 +14,50 @@ class NoteCreate(BaseModel):
     content : str = Field(max_length=1000 , min_length=1)
     images : list[image] | None = Field(default = None , title="The list of images associated with the note")
 
+    model_config = {
+        "json_schema_extra" : {
+            "example" : {
+                "title" : "sample note" ,
+                "content" : "This is a sample note." ,
+                "images" : [
+                    {
+                        "url" : "https://example.com/image1.jpg",
+                        "name" : "image1"
+                    },
+                    {
+                        "url" : "https://example.com/image2.jpg",
+                        "name" : "image2"  
+                    }
+                ]
+            }
+        }
+    }
+
 class Note(BaseModel):
     id : int = Field(title="The ID of the note")
     title : str = Field(title="The title of the note")
     content : str = Field(title="The content of the note")
     images : list[image] | None = Field(default=None, title="The list of images associated with the note")
+
+    model_config = {
+        "json_schema_extra" : {
+            "example" : {
+                "id" : 1,
+                "title" : "sample note" ,
+                "content" : "This is a sample note." ,
+                "images" : [
+                    {
+                        "url" : "https://example.com/image1.jpg",
+                        "name" : "image1"
+                    },
+                    {
+                        "url" : "https://example.com/image2.jpg",
+                        "name" : "image2"  
+                    }
+                ]
+            }
+        }
+    }
 
 notes_db = {}
 
