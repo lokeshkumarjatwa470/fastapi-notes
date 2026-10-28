@@ -62,26 +62,7 @@ class Note(BaseModel):
 notes_db = {}
 
 @app.post("/notes" , status_code=status.HTTP_201_CREATED)
-async def create_note(note : Annotated[NoteCreate , Body(openapi_examples={
-    "normal" : {
-                    "summary": "A normal note",
-                    "description": "A note with text and one image.",
-                    "value": {
-                        "title": "sample note for lokesh",
-                        "content": "This is a sample note.",
-                        "images": [{"url": "https://example.com/image1.jpg", "name": "image1"}],
-                    }
-                },
-    "Without Image" : {
-                    "summary": "Note without images",
-                    "value": {"id": 2, "title": "text only", "content": "No images here."},
-                },
-    "invalid" : {
-                    "summary": "Invalid data (will fail validation)",
-                    "value": {"id": "abc", "title": 123},
-                }
-    }
-)]):
+async def create_note(note : Annotated[NoteCreate , Body()]):
     global next_id
     note_id = next_id
     next_id += 1
