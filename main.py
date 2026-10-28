@@ -1,4 +1,4 @@
-from fastapi import FastAPI , Path, HTTPException , status 
+from fastapi import FastAPI , Path, HTTPException , status , Body
 from typing import Annotated 
 from pydantic import BaseModel , Field, HttpUrl  
 
@@ -6,8 +6,8 @@ app = FastAPI()
 next_id = 1
 
 class image(BaseModel):
-    url : HttpUrl = Field(title="The URL of the image")
-    name : str = Field(title="The name of the image")
+    url : HttpUrl = Field(title="The URL of the image" , example="https://example.com/image.jpg")
+    name : str = Field(title="The name of the image" , example="image1")
 
 class NoteCreate(BaseModel):
     title : str = Field( max_length=100 , min_length=1)
@@ -18,7 +18,7 @@ class NoteCreate(BaseModel):
         "json_schema_extra" : {
             "example" : {
                 "title" : "sample note" ,
-                "content" : "This is a sample note." ,
+                "content" : "This is a sample note for jatwa." ,
                 "images" : [
                     {
                         "url" : "https://example.com/image1.jpg",
@@ -44,7 +44,7 @@ class Note(BaseModel):
             "example" : {
                 "id" : 1,
                 "title" : "sample note" ,
-                "content" : "This is a sample note." ,
+                "content" : "This is a sample note for kumar." ,
                 "images" : [
                     {
                         "url" : "https://example.com/image1.jpg",
@@ -62,7 +62,26 @@ class Note(BaseModel):
 notes_db = {}
 
 @app.post("/notes" , status_code=status.HTTP_201_CREATED)
-async def create_note(note : NoteCreate):
+async def create_note(note : Annotated[NoteCreate , Body(openapi_examples={
+    "normal" : {
+                    "summary": "A normal note",
+                    "description": "A note with text and one image.",
+                    "value": {
+                        "title": "sample note for lokesh",
+                        "content": "This is a sample note.",
+                        "images": [{"url": "https://example.com/image1.jpg", "name": "image1"}],
+                    }
+                },
+    "Without Image" : {
+                    "summary": "Note without images",
+                    "value": {"id": 2, "title": "text only", "content": "No images here."},
+                },
+    "invalid" : {
+                    "summary": "Invalid data (will fail validation)",
+                    "value": {"id": "abc", "title": 123},
+                }
+    }
+)]):
     global next_id
     note_id = next_id
     next_id += 1
