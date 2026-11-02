@@ -1,9 +1,10 @@
-from fastapi import FastAPI , Path, HTTPException , status , Body
+from fastapi import FastAPI , Path, HTTPException , status , Body , Response    , cookie
 from typing import Annotated 
 from pydantic import BaseModel , Field, HttpUrl  
 
 app = FastAPI()
 next_id = 1
+
 
 class image(BaseModel):
     url : HttpUrl = Field(title="The URL of the image" , example="https://example.com/image.jpg")
@@ -33,6 +34,14 @@ class NoteCreate(BaseModel):
         }
     }
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+
 class Note(BaseModel):
     id : int = Field(title="The ID of the note")
     title : str = Field(title="The title of the note")
@@ -60,6 +69,20 @@ class Note(BaseModel):
     }
 
 notes_db = {}
+
+demo_user = {
+    "username": "admin",
+    "password": "password123",
+}
+
+@app.post("/login", response_model=LoginResponse)
+async def login(credentials: LoginRequest):
+    if credentials.model_dump() != demo_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+    return LoginResponse(access_token="demo-token", token_type="bearer")
 
 @app.post("/notes" , status_code=status.HTTP_201_CREATED)
 async def create_note(note : Annotated[NoteCreate , Body()]):
