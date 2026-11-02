@@ -1,4 +1,4 @@
-from fastapi import FastAPI , Path, HTTPException , status , Body , Response    , cookie
+from fastapi import Cookie, FastAPI , Path, HTTPException , status , Body , Response
 from typing import Annotated 
 from pydantic import BaseModel , Field, HttpUrl  
 
@@ -76,13 +76,19 @@ demo_user = {
 }
 
 @app.post("/login", response_model=LoginResponse)
-async def login(credentials: LoginRequest):
+async def login(credentials: LoginRequest, response: Response):
     if credentials.model_dump() != demo_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
+    response.set_cookie(key="session_id", value="abc123", httponly=True)
     return LoginResponse(access_token="demo-token", token_type="bearer")
+
+
+@app.get("/me")
+async def me(session_id: Annotated[str | None, Cookie()] = None):
+    return {"session_id": session_id}
 
 @app.post("/notes" , status_code=status.HTTP_201_CREATED)
 async def create_note(note : Annotated[NoteCreate , Body()]):
