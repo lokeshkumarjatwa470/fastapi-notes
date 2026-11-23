@@ -1,6 +1,13 @@
+import os 
+from dotenv import load_dotenv
+from sqlalchemy import create_engine , text
+
 from typing import Annotated
 from fastapi import Body, Cookie, FastAPI, HTTPException, Path, Response, status
 from pydantic import BaseModel, Field, HttpUrl
+
+load_dotenv()
+engine = create_engine(os.getenv("DATABASE_URL"))
 
 app = FastAPI(title="Notes API", version="1.0.0")
 next_id = 1
@@ -68,7 +75,7 @@ class Note(BaseModel):
     }
 
 
-notes_db: dict[int, dict] = {}
+notes_db : dict[int, dict] = {}
 
 demo_user = {
     "username": "admin",
@@ -131,17 +138,23 @@ async def list_notes():
 
 
 @app.get("/notes/{note_id}", response_model=Note)
-async def get_note(
+def get_note(
     note_id: Annotated[int, Path(title="The ID of the note to retrieve", gt=0)]
 ):
-    note = notes_db.get(note_id)
-    if note is None:
+
+    with engine.connect() as conn :
+        result = conn.execute(
+            text("SELECT id , title , content FROM notes WHERE id = :id") ,
+            {"id" : note_id},
+        )
+
+    row = result.fetchone() 
+    if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     return Note(
-        id=note_id,
-        title=note["title"],
-        content=note["content"],
-        images=note["images"],
+        id=row.id,
+        title=row.title,
+        content=row.content,
     )
 
 
