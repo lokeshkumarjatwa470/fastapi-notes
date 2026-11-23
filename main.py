@@ -10,13 +10,11 @@ load_dotenv()
 engine = create_engine(os.getenv("DATABASE_URL"))
 
 app = FastAPI(title="Notes API", version="1.0.0")
-next_id = 1
+
 
 class Image(BaseModel):
     url: HttpUrl = Field(title="The URL of the image")
     name: str = Field(title="The name of the image")
-
-
 
 class NoteCreate(BaseModel):
     title: str = Field(max_length=100, min_length=1)
@@ -37,7 +35,6 @@ class NoteCreate(BaseModel):
             }
         }
     }
-
 
 class NoteUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=100, min_length=1)
@@ -109,25 +106,20 @@ async def me(session_id: Annotated[str | None, Cookie()] = None):
 
 
 @app.post("/notes", response_model=Note, status_code=status.HTTP_201_CREATED)
-async def create_note(note: Annotated[NoteCreate, Body()]):
-    global next_id
-    note_id = next_id
-    next_id += 1
-    notes_db[note_id] = {
-        "title": note.title,
-        "content": note.content,
-        "images": note.images,
-    }
-    new_note = Note(
-        id=note_id, title=note.title, content=note.content, images=note.images
-    )
-    return new_note
+def create_note(note: Annotated[NoteCreate, Body()]):
+    with engine.begin() as conn:
+        result = conn.execute(
+            text("INSERT INTO notes (title , content) VALUES(:title , :content)  RETURNING id , title , content"),
+            {"title":note.title , "content" : note.content},
+        )
+        row = result.fetchone()
+    return row
 
 
 @app.get("/notes", response_model=list[Note])
 def list_notes():
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT id , title , content FROM notes"))
+        result = conn.execute(text("SELECT id , title , content FROM notes ORDER by id"))
 
     rows = result.fetchall() 
     return [Note(id  = row.id , title = row.title , content = row.content) for row in rows]
