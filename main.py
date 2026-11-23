@@ -125,17 +125,13 @@ async def create_note(note: Annotated[NoteCreate, Body()]):
 
 
 @app.get("/notes", response_model=list[Note])
-async def list_notes():
-    return [
-        Note(
-            id=note_id,
-            title=note["title"],
-            content=note["content"],
-            images=note["images"],
-        )
-        for note_id, note in notes_db.items()
-    ]
+def list_notes():
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT id , title , content FROM notes"))
 
+    rows = result.fetchall() 
+    return [Note(id  = row.id , title = row.title , content = row.content) for row in rows]
+    
 
 @app.get("/notes/{note_id}", response_model=Note)
 def get_note(
