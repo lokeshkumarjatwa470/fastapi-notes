@@ -147,16 +147,17 @@ def get_note(
 
 
 @app.delete("/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_note(
+def delete_note(
     note_id: Annotated[int, Path(title="The ID of the note to delete", gt=0)]
 ):
-    note = notes_db.get(note_id)
-    if note:
-        del notes_db[note_id]
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
-
-
+    with engine.begin() as conn :
+        result = conn.execute(
+            text("DELETE FROM notes WHERE id = :id"),
+            {"id":note_id},
+        )
+    if result.rowcount == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Note not found")
+    
 @app.put("/notes/{note_id}", response_model=Note)
 async def update_note(
     note_id: Annotated[int, Path(title="The ID of the note to update", gt=0)],
