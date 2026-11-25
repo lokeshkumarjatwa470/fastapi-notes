@@ -157,23 +157,26 @@ def delete_note(
         )
     if result.rowcount == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND , detail="Note not found")
+ 
     
 @app.put("/notes/{note_id}", response_model=Note)
-async def update_note(
+def update_note(
     note_id: Annotated[int, Path(title="The ID of the note to update", gt=0)],
     note: NoteCreate,
 ):
-    existing_note = notes_db.get(note_id)
-    if existing_note is None:
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "UPDATE notes SET title = :title, content = :content "
+                "WHERE id = :id RETURNING id, title, content"
+            ),
+            {"id": note_id, "title": note.title, "content": note.content},
+        )
+        row = result.fetchone()
+
+    if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
-    notes_db[note_id] = {
-        "title": note.title,
-        "content": note.content,
-        "images": note.images,
-    }
-    return Note(
-        id=note_id, title=note.title, content=note.content, images=note.images
-    )
+    return Note(id=row.id, title=row.title, content=row.content)
 
 @app.patch("/notes/{note_id}", response_model=Note)
 async def patch_note(
