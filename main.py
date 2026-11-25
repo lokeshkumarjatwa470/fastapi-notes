@@ -178,20 +178,47 @@ def update_note(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     return Note(id=row.id, title=row.title, content=row.content)
 
+
 @app.patch("/notes/{note_id}", response_model=Note)
-async def patch_note(
+def patch_note(
     note_id: Annotated[int, Path(title="The ID of the note to update", gt=0)],
     note: NoteUpdate,
 ):
-    existing_note = notes_db.get(note_id)
-    if existing_note is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
-
     updates = note.model_dump(exclude_unset=True)
-    existing_note.update(updates)
-    return Note(
-        id=note_id,
-        title=existing_note["title"],
-        content=existing_note["content"],
-        images=existing_note["images"],
-    )
+    if "images" in updates:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The database does not store note images",
+        )
+    if any(value is None for value in updates.values()):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Note title and content cannot be null",
+        )
+
+    with engine.begin() as conn:
+        if updates:
+            assignments = ", ".join(
+                f"{field} = :{field}" for field in ("title", "content") if field in updates
+            )
+            result = conn.execute(
+                text(
+                    f"UPDATE notes SET {assignments} "
+                    "WHERE id = :id RETURNING id, title, content"
+                ),
+                {"id": note_id, **updates},
+            )
+        else:
+            result = conn.execute(
+                text("SELECT id, title, content FROM notes WHERE id = :id"),
+                {"id": note_id},
+            )
+        row = result.fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    return Note(id=row.id, title=row.title, content=row.content)
+
+
+
+
